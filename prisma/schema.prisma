@@ -1,0 +1,164 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Student {
+  id                 Int      @id @default(autoincrement())
+  name               String
+  telegramId         String?  @unique
+  phoneNumber        String?  @unique
+  email              String?
+  city               String?
+  birthDate          String?
+  learningReason     String?
+  experience         String?
+  level              String   @default("beginner") // beginner, intermediate, advanced
+  sessionsPerWeek    String?
+  selectedDays       String?
+  selectedTimes      String?
+  additionalInfo     String?
+  sessionsLeft       Int      @default(0)
+  paymentStatus      String   @default("unpaid") // unpaid, paid, overdue
+  classType          String   @default("private") // private, group
+  classSchedule      String?  // JSON string of class times
+  registrationStatus String   @default("pending") // pending, approved, rejected
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  bookings           Booking[]
+  payments           Payment[]
+  homework           Homework[]
+  questions          Question[]
+  classes            Class[]
+  
+  @@map("Student")
+}
+
+model Availability {
+  id          Int      @id @default(autoincrement())
+  dateTime    DateTime @unique
+  isBooked    Boolean  @default(false)
+  isAvailable Boolean  @default(true)
+  classType   String   @default("private") // private, group
+  maxStudents Int      @default(1) // for group classes
+  currentStudents Int   @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  bookings    Booking[]
+  
+  @@map("availability")
+}
+
+model Booking {
+  id           Int          @id @default(autoincrement())
+  student      Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId    Int
+  availability Availability @relation(fields: [availabilityId], references: [id], onDelete: Cascade)
+  availabilityId Int
+  dateTime     DateTime
+  status       String       @default("booked") // booked, completed, cancelled, no-show
+  notes        String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  
+  @@map("bookings")
+}
+
+model Payment {
+  id          Int      @id @default(autoincrement())
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId   Int
+  amount      Float
+  currency    String   @default("USD")
+  status      String   @default("pending") // pending, completed, failed, refunded
+  method      String?  // cash, bank_transfer, online
+  description String?
+  paidAt      DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("payments")
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  studentId Int?
+  type      String   // class_reminder, payment_reminder, low_sessions, booking_confirmation
+  message   String
+  sentAt    DateTime?
+  status    String   @default("pending") // pending, sent, failed
+  createdAt DateTime @default(now())
+  
+  @@map("notifications")
+}
+
+model Homework {
+  id          Int      @id @default(autoincrement())
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId   Int
+  teacher     Teacher? @relation(fields: [teacherId], references: [id], onDelete: SetNull)
+  teacherId   Int?
+  title       String?
+  description String?
+  status      String   @default("submitted") // submitted, reviewed, approved, needs_revision
+  teacherNotes String?
+  submittedAt DateTime @default(now())
+  reviewedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("homework")
+}
+
+model Teacher {
+  id          Int      @id @default(autoincrement())
+  name        String
+  telegramId  String?  @unique
+  phoneNumber String?
+  email       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  homework    Homework[]
+  
+  @@map("teachers")
+}
+
+model Question {
+  id          Int      @id @default(autoincrement())
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId   Int
+  question    String
+  response    String?
+  status      String   @default("pending") // pending, answered
+  createdAt   DateTime @default(now())
+  answeredAt  DateTime?
+  
+  @@map("questions")
+}
+
+model Class {
+  id          Int      @id @default(autoincrement())
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId   Int
+  day         String   // e.g., "دوشنبه", "چهارشنبه"
+  time        String   // e.g., "15:00"
+  date        DateTime // specific date of the class
+  status      String   @default("scheduled") // scheduled, completed, cancelled, cancelled_by_student, cancelled_by_teacher
+  attendance  String?  // attending, not_attending, null
+  classType   String   @default("private") // private, group
+  groupId     String?  // for grouping students in group classes
+  cancelledAt DateTime?
+  cancelledBy String?  // student, teacher
+  cancellationReason String?
+  reminderSent Boolean @default(false)
+  reviewSent  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("classes")
+}

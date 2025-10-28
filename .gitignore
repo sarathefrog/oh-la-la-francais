@@ -39,3 +39,33 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# prisma
+/src/generated/prisma
+prisma/dev.db
+prisma/dev.db-journal
+
+# docker
+.dockerignore
+
+# credentials and sensitive files
+google-credentials.json
+.env
+.env.local
+.env.production
+
+# logs
+*.log
+
+# database
+*.db
+*.db-journal
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db

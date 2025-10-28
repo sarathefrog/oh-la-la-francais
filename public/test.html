@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تست سیستم اعلان‌ها</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 30px;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .test-section h3 {
+            color: #2d3748;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-success {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ed8936;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .result {
+            background: #e6fffa;
+            border: 1px solid #38b2ac;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .error {
+            background: #fed7d7;
+            border: 1px solid #f56565;
+            color: #742a2a;
+        }
+
+        .success {
+            background: #c6f6d5;
+            border: 1px solid #48bb78;
+            color: #22543d;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 تست سیستم اعلان‌های کلاس</h1>
+
+        <div class="test-section">
+            <h3>📅 ارسال یادآوری کلاس</h3>
+            <div class="form-group">
+                <label>انتخاب دانش‌آموز:</label>
+                <select id="studentSelect">
+                    <option value="">در حال بارگذاری...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>انتخاب کلاس:</label>
+                <select id="classSelect">
+                    <option value="">ابتدا دانش‌آموز را انتخاب کنید</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" onclick="sendClassReminder()">ارسال یادآوری کلاس</button>
+            <div id="reminderResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 ارسال درخواست نظرسنجی</h3>
+            <div class="form-group">
+                <label>انتخاب کلاس (از لیست بالا):</label>
+                <select id="reviewClassSelect">
+                    <option value="">ابتدا دانش‌آموز را انتخاب کنید</option>
+                </select>
+            </div>
+            <button class="btn btn-success" onclick="sendClassReview()">ارسال درخواست نظرسنجی</button>
+            <button class="btn btn-warning" onclick="sendReviewToStudent()">ارسال نظرسنجی به دانش‌آموز</button>
+            <div id="reviewResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>⏰ تست سیستم خودکار</h3>
+            <p>سیستم خودکار هر دقیقه کلاس‌های آینده را بررسی می‌کند:</p>
+            <ul>
+                <li>5 دقیقه قبل از کلاس: ارسال یادآوری</li>
+                <li>1.5 ساعت بعد از کلاس: ارسال درخواست نظرسنجی</li>
+            </ul>
+            <button class="btn btn-warning" onclick="checkReminders()">بررسی دستی اعلان‌ها</button>
+            <div id="checkResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 وضعیت کلاس‌ها</h3>
+            <button class="btn btn-primary" onclick="loadClasses()">بارگذاری کلاس‌ها</button>
+            <div id="classesList" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        let students = [];
+        let classes = [];
+
+        // Load students on page load
+        document.addEventListener('DOMContentLoaded', loadStudents);
+
+        // Load students
+        async function loadStudents() {
+            try {
+                const response = await fetch('/api/dashboard');
+                const data = await response.json();
+                students = data.students.filter(s => s.registrationStatus === 'approved');
+                
+                const select = document.getElementById('studentSelect');
+                select.innerHTML = '<option value="">انتخاب دانش‌آموز</option>';
+                
+                students.forEach(student => {
+                    const option = document.createElement('option');
+                    option.value = student.id;
+                    option.textContent = `${student.name} (${student.telegramId})`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading students:', error);
+                showResult('reminderResult', 'خطا در بارگذاری دانش‌آموزان', 'error');
+            }
+        }
+
+        // Load classes for selected student
+        async function loadClassesForStudent(studentId) {
+            try {
+                const response = await fetch(`/api/students/${studentId}/classes`);
+                classes = await response.json();
+                
+                const classSelect = document.getElementById('classSelect');
+                const reviewClassSelect = document.getElementById('reviewClassSelect');
+                
+                classSelect.innerHTML = '<option value="">انتخاب کلاس</option>';
+                reviewClassSelect.innerHTML = '<option value="">انتخاب کلاس</option>';
+                
+                classes.forEach(classRecord => {
+                    const date = new Date(classRecord.date);
+                    const dateStr = date.toLocaleDateString('fa-IR');
+                    const timeStr = date.toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
+                    
+                    const option1 = document.createElement('option');
+                    option1.value = classRecord.id;
+                    option1.textContent = `${classRecord.day} - ${classRecord.time} (${dateStr})`;
+                    classSelect.appendChild(option1);
+                    
+                    const option2 = document.createElement('option');
+                    option2.value = classRecord.id;
+                    option2.textContent = `${classRecord.day} - ${classRecord.time} (${dateStr})`;
+                    reviewClassSelect.appendChild(option2);
+                });
+            } catch (error) {
+                console.error('Error loading classes:', error);
+                showResult('reminderResult', 'خطا در بارگذاری کلاس‌ها', 'error');
+            }
+        }
+
+        // Send class reminder
+        async function sendClassReminder() {
+            const classId = document.getElementById('classSelect').value;
+            if (!classId) {
+                showResult('reminderResult', 'لطفاً کلاس را انتخاب کنید', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/test/send-reminder/${classId}`, {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    showResult('reminderResult', 'یادآوری کلاس ارسال شد!', 'success');
+                } else {
+                    throw new Error('Failed to send reminder');
+                }
+            } catch (error) {
+                console.error('Error sending reminder:', error);
+                showResult('reminderResult', 'خطا در ارسال یادآوری', 'error');
+            }
+        }
+
+        // Send class review
+        async function sendClassReview() {
+            const classId = document.getElementById('reviewClassSelect').value;
+            if (!classId) {
+                showResult('reviewResult', 'لطفاً کلاس را انتخاب کنید', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/test/send-review/${classId}`, {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    showResult('reviewResult', 'درخواست نظرسنجی ارسال شد!', 'success');
+                } else {
+                    throw new Error('Failed to send review');
+                }
+            } catch (error) {
+                console.error('Error sending review:', error);
+                showResult('reviewResult', 'خطا در ارسال درخواست نظرسنجی', 'error');
+            }
+        }
+
+        // Check reminders manually
+        async function checkReminders() {
+            try {
+                const response = await fetch('/api/test/check-reminders', {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    showResult('checkResult', `بررسی انجام شد. ${result.remindersSent} یادآوری و ${result.reviewsSent} نظرسنجی ارسال شد.`, 'success');
+                } else {
+                    throw new Error('Failed to check reminders');
+                }
+            } catch (error) {
+                console.error('Error checking reminders:', error);
+                showResult('checkResult', 'خطا در بررسی اعلان‌ها', 'error');
+            }
+        }
+
+        // Load all classes
+        async function loadClasses() {
+            try {
+                const response = await fetch('/api/classes');
+                const allClasses = await response.json();
+                
+                let html = '<h4>کلاس‌های آینده:</h4><ul>';
+                allClasses.forEach(classRecord => {
+                    const date = new Date(classRecord.date);
+                    const dateStr = date.toLocaleDateString('fa-IR');
+                    const timeStr = date.toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
+                    
+                    html += `<li>${classRecord.student.name} - ${classRecord.day} ${classRecord.time} (${dateStr}) - ${classRecord.status}</li>`;
+                });
+                html += '</ul>';
+                
+                showResult('classesList', html, 'success');
+            } catch (error) {
+                console.error('Error loading classes:', error);
+                showResult('classesList', 'خطا در بارگذاری کلاس‌ها', 'error');
+            }
+        }
+
+        // Show result
+        function showResult(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = message;
+            element.className = `result ${type}`;
+            element.style.display = 'block';
+        }
+
+        // Send review to student
+        async function sendReviewToStudent() {
+            const studentId = document.getElementById('studentSelect').value;
+            if (!studentId) {
+                showResult('reviewResult', 'لطفاً دانش‌آموز را انتخاب کنید', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/test/send-review-to-student/${studentId}`, {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    showResult('reviewResult', 'نظرسنجی به دانش‌آموز ارسال شد!', 'success');
+                } else {
+                    throw new Error('Failed to send review');
+                }
+            } catch (error) {
+                console.error('Error sending review to student:', error);
+                showResult('reviewResult', 'خطا در ارسال نظرسنجی', 'error');
+            }
+        }
+
+        // Student selection change
+        document.getElementById('studentSelect').addEventListener('change', function() {
+            const studentId = this.value;
+            if (studentId) {
+                loadClassesForStudent(studentId);
+            }
+        });
+    </script>
+</body>
+</html>
