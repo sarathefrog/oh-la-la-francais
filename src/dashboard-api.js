@@ -265,7 +265,8 @@ async function generateClassSchedule(studentId, classTimes, startDate = new Date
 }
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`📊 Dashboard API running on port ${PORT}`);
+const HOST = process.env.HOSTNAME || '0.0.0.0';
+app.listen(PORT, HOST, () => {
+  console.log(`📊 Dashboard API running on ${HOST}:${PORT}`);
 });
 
